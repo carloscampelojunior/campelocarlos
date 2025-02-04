@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💻 Sistema Invadido Pelo Amor 💚</title>
+    <style>
+        body {
+            background-color: black;
+            color: #00ff00;
+            font-family: monospace;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        #matrix {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        #conteudo {
+            margin-top: 50px;
+        }
+
+        .btn {
+            background: black;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            font-family: monospace;
+        }
+
+        .btn:hover {
+            background: #00ff00;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+
+    <div id="conteudo">
+        <h2>⚠️ ALERTA: VOCÊ FOI SELECIONADA ⚠️</h2>
+        <p>O sistema detectou um erro no seu coração. Você aceita a missão?</p>
+        <button class="btn" onclick="aceitar()">✅ Aceitar a Missão</button>
+        <button class="btn" onclick="erro()">❌ Recusar</button>
+    </div>
+
+    <script>
+        function aceitar() {
+            alert("A Missão foi aceita! Prepare-se para uma experiência inesquecível. 💖");
+            location.href = "https://music.youtube.com/watch?v=izGwDsrQ1eQ"; // Link da música romântica
+        }
+
+        function erro() {
+            alert("ERRO 404: Opção inválida. O amor sempre vence! 😆💚");
+            document.getElementById("conteudo").innerHTML = "<h2>💘 Missão Confirmada! 💘</h2><p>Não há escapatória, Campelo já te hackeou! 😍</p>";
+        }
+
+        // Código do efeito Matrix
+        var canvas = document.getElementById("matrix");
+        var ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        letters = letters.split("");
+
+        var fontSize = 14;
+        var columns = canvas.width / fontSize;
+        var drops = [];
+
+        for (var x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0F0";
+            ctx.font = fontSize + "px monospace";
+
+            for (var i = 0; i < drops.length; i++) {
+                var text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(draw, 35);
+    </script>
+</body>
+</html>
