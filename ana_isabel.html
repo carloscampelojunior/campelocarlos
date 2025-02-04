@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Jornada do Convite 💖</title>
+    <style>
+        body {
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #conteudo {
+            background: #ff69b4;
+            border-radius: 10px;
+            padding: 20px;
+            display: inline-block;
+        }
+
+        .btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="conteudo">
+        <h2>🏹 Uma Jornada do Amor 🏹</h2>
+        <p>Você recebe um convite misterioso de Campelo... O que deseja fazer?</p>
+        <button class="btn" onclick="aceitar()">💖 Aceitar o desafio e sair com Campelo</button>
+        <button class="btn" onclick="fugir()">🏃‍♀️ Fugir, mas ser capturado pelos Cupidos do Amor</button>
+    </div>
+
+    <script>
+        function aceitar() {
+            alert("Você aceitou! Prepare-se para uma noite incrível! ✨💖");
+            location.href = "https://music.youtube.com/watch?v=izGwDsrQ1eQ";
+        }
+
+        function fugir() {
+            alert("Você tentou fugir, mas os Cupidos do Amor te encontraram! 😆💕");
+            alert("O destino quer que você saia com Campelo!");
+            document.getElementById("conteudo").innerHTML = "<h2>💘 O Destino Foi Selado! 💘</h2><p>Não adianta fugir do amor! Então, quando nos encontramos? 😍</p>";
+        }
+    </script>
+</body>
+
+</html>
