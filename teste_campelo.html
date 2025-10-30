@@ -3,180 +3,146 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Comparador Vertical – Upload, Labels, Filtros</title>
+<title>Comparador estilo Juxtapose – Upload, Labels, Filtros</title>
 <style>
   :root{
-    --bg:#0f172a;         /* slate-900 */
-    --panel:#111827;      /* gray-900 */
-    --muted:#334155;      /* slate-700 */
-    --text:#e5e7eb;       /* gray-200 */
-    --accent:#22d3ee;     /* cyan-400 */
-    --line:#64748b;       /* slate-500 */
-    --card:#0b1220;
-    --ring:#38bdf8;
+    --bg:#0f172a; --panel:#0b1220; --line:#1f2937; --muted:#94a3b8;
+    --text:#e5e7eb; --accent:#22d3ee; --accent-2:#38bdf8;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0;background:linear-gradient(180deg,#0b1220,#0a1020 60%,#0b1220);
-    color:var(--text);font:500 15px/1.4 system-ui,Segoe UI,Roboto,Arial;
-  }
-  header{
-    padding:20px 24px;border-bottom:1px solid #1f2937;display:flex;gap:12px;align-items:center;
-  }
-  header h1{font-size:18px;margin:0}
-  .badge{font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;color:#cbd5e1}
-  main{display:grid;grid-template-columns:320px 1fr;min-height:calc(100dvh - 64px);}
-  @media (max-width:1000px){main{grid-template-columns:1fr;}}
-  aside{border-right:1px solid #1f2937;padding:16px;display:flex;flex-direction:column;gap:16px}
-  @media (max-width:1000px){aside{border-right:none;border-bottom:1px solid #1f2937}}
-  .card{background:var(--card);border:1px solid #1f2937;border-radius:14px;padding:12px}
-  .card h3{margin:0 0 8px 0;font-size:14px;letter-spacing:.2px;color:#cbd5e1}
-  .drop{
-    border:1.5px dashed var(--line);border-radius:12px;padding:14px;text-align:center;background:#0b1325;
-  }
-  .drop.dragover{border-color:var(--accent);background:#08101f}
+  body{margin:0;background:linear-gradient(180deg,#0b1220,#0a1020 60%,#0b1220);color:var(--text);font:500 15px/1.42 system-ui,Segoe UI,Roboto,Arial}
+  header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+  header h1{margin:0;font-size:18px}
+  .badge{font-size:12px;border:1px solid #334155;border-radius:999px;padding:2px 8px;color:#cbd5e1}
+  main{display:grid;grid-template-columns:330px 1fr;min-height:calc(100dvh - 57px)}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  aside{border-right:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:14px}
+  @media (max-width:1000px){aside{border-right:none;border-bottom:1px solid var(--line)}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .card h3{margin:0 0 8px 0;font-size:14px;color:#cbd5e1;letter-spacing:.2px}
+  .drop{border:1.5px dashed #2b3b55;border-radius:12px;padding:14px;text-align:center;background:#081225}
+  .drop.dragover{border-color:var(--accent);background:#07101f}
   .drop input{display:none}
   .btn{background:#0e1a30;border:1px solid #22314a;color:#e2e8f0;padding:8px 10px;border-radius:10px;cursor:pointer}
   .btn:hover{border-color:#2e476f}
+  input[type="text"], select{
+    width:100%;padding:8px 10px;border-radius:10px;border:1px solid #22314a;background:#0c1628;color:#e5e7eb;outline:none
+  }
+  input[type="text"]:focus, select:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px #38bdf833}
   .grid{display:grid;gap:8px}
   .grid.cols-2{grid-template-columns:1fr 1fr}
-  .grid.cols-3{grid-template-columns:1fr 1fr 1fr}
-  label small{color:#93a3b8}
-  input[type="text"], select{
-    width:100%;padding:8px 10px;border-radius:10px;border:1px solid #253249;background:#0c1628;color:#e5e7eb;
-    outline:none;
-  }
-  input[type="text"]:focus, select:focus{border-color:var(--ring);box-shadow:0 0 0 3px #38bdf833}
   .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;max-height:240px;overflow:auto}
-  .thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid #1f2937;background:#0b1120}
+  .thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#0a1429}
   .thumb img{width:100%;height:72px;object-fit:cover;display:block}
-  .thumb .meta{padding:6px;font-size:12px;color:#cbd5e1;border-top:1px solid #1f2937}
-  .thumb .edit{position:absolute;top:6px;right:6px;font-size:11px;background:#0b1220aa;border:1px solid #243043;padding:2px 6px;border-radius:8px;cursor:pointer}
-  .sr{position:absolute;left:-9999px}
-  /* Comparador */
+  .thumb .meta{padding:6px;font-size:12px;color:#cbd5e1;border-top:1px solid var(--line)}
+  .thumb .edit{position:absolute;top:6px;right:6px;font-size:11px;background:#0b1220bb;border:1px solid #243043;padding:2px 6px;border-radius:8px;cursor:pointer}
+  /* Stage */
   .stage-wrap{padding:16px}
   .stage{
-    position:relative;max-width:1100px;margin:0 auto;border:1px solid #1f2937;border-radius:16px;overflow:hidden;background:#0a1220;
-    aspect-ratio:16/9;
+    position:relative;max-width:1100px;margin:0 auto;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0a1220;
+    aspect-ratio:16/9;touch-action:none;
   }
   .layer{position:absolute;inset:0}
   .layer img{width:100%;height:100%;object-fit:contain;background:#0b1120}
-  /* A camada de CIMA é recortada pela máscara (altura variável) */
-  .top-mask{position:absolute;left:0;right:0;bottom:0;background:transparent;overflow:hidden;pointer-events:none}
-  .top-mask img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-  /* Barra/handle */
+  /* Máscara horizontal (estilo Juxtapose: barra vertical desliza no eixo X) */
+  .left-mask{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .left-mask-inner{position:absolute;inset:0}
+  .left-mask img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  /* Barra/handle ao estilo Juxtapose */
   .handle{
-    position:absolute;left:0;right:0;height:2px;background:var(--accent);box-shadow:0 0 0 1px #0b1220, 0 0 0 2px #083344 inset;
-    cursor:ns-resize;transform:translateY(-1px);
+    position:absolute;top:0;bottom:0;width:2px;background:var(--accent-2);
+    box-shadow:0 0 0 1px #06111f,0 0 0 2px #083344 inset;cursor:ew-resize;transform:translateX(-1px);
   }
-  .handle .knob{
-    position:absolute;left:50%;transform:translate(-50%,-50%);top:1px;
-    width:30px;height:30px;border-radius:999px;background:#06111f;border:1px solid #1e2d49;display:grid;place-items:center;
+  .knob{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:44px;height:44px;border-radius:999px;background:#06111f;border:2px solid #0ea5b6;display:grid;place-items:center;
+    box-shadow:0 3px 14px #0008, inset 0 0 0 2px #06202e;
   }
-  .handle .knob:after{content:"↕";font-size:16px;color:#a5f3fc}
-  .slider-ghost{
-    position:absolute;left:12px;top:12px;background:#09152a;border:1px solid #1e2d49;border-radius:10px;padding:6px 8px;font-size:12px;color:#cbd5e1
-  }
-  .legend{
-    position:absolute;inset:12px 12px auto auto;display:flex;gap:8px
-  }
-  .pill{
-    padding:4px 8px;border-radius:999px;background:#0e1a30;border:1px solid #22314a;font-size:12px;color:#dbeafe
-  }
+  .knob:after{content:"◄ ►";font-size:14px;letter-spacing:2px;color:#a5f3fc}
+  /* Pílulas de legenda */
+  .legend{position:absolute;inset:auto 12px 12px 12px;display:flex;gap:8px;justify-content:space-between;pointer-events:none}
+  .pill{padding:4px 8px;border-radius:999px;background:#0e1a30bb;border:1px solid #22314a;font-size:12px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .hint{position:absolute;left:12px;top:12px;background:#09152a;border:1px solid #1e2d49;border-radius:10px;padding:6px 8px;font-size:12px;color:#cbd5e1}
 </style>
 </head>
 <body>
 <header>
-  <h1>Comparador Vertical</h1>
-  <span class="badge">Upload + Labels + Filtros</span>
+  <h1>Comparador estilo Juxtapose</h1>
+  <span class="badge">Barra vertical com knob central (◄ ►)</span>
 </header>
 
 <main>
   <aside>
     <div class="card">
       <h3>1) Upload de imagens</h3>
-      <div id="drop" class="drop" tabindex="0" aria-label="Área para soltar imagens">
+      <div id="drop" class="drop" tabindex="0">
         Solte imagens aqui ou
         <label class="btn" for="fileInput">escolha arquivos</label>
         <input id="fileInput" type="file" accept="image/*" multiple>
-        <div style="margin-top:6px;font-size:12px;color:#93a3b8">Dica: selecione várias de uma vez.</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted)">Dica: selecione várias de uma vez.</div>
       </div>
-      <div style="margin-top:10px">
-        <div class="thumbs" id="thumbs"></div>
-      </div>
+      <div style="margin-top:10px"><div class="thumbs" id="thumbs"></div></div>
     </div>
 
     <div class="card">
-      <h3>2) Editar metadados (Label e Tags)</h3>
+      <h3>2) Editar metadados</h3>
       <div class="grid cols-2">
-        <div>
-          <label><small>Imagem selecionada:</small>
-            <select id="metaSelect"></select>
-          </label>
-        </div>
-        <div class="toolbar">
-          <button id="saveMeta" class="btn">Salvar</button>
-        </div>
+        <label>Imagem
+          <select id="metaSelect"></select>
+        </label>
+        <div class="toolbar"><button id="saveMeta" class="btn">Salvar</button></div>
       </div>
       <div class="grid">
-        <label>Label
-          <input type="text" id="metaLabel" placeholder="Ex.: Fachada Leste – Março/2025">
-        </label>
-        <label>Tags (separe por vírgulas)
-          <input type="text" id="metaTags" placeholder="Ex.: antes,demolição,loteA">
-        </label>
+        <label>Label <input type="text" id="metaLabel" placeholder="Ex.: Fachada Leste – Mar/2025"></label>
+        <label>Tags (vírgulas) <input type="text" id="metaTags" placeholder="antes,demolição,loteA"></label>
       </div>
     </div>
 
     <div class="card">
-      <h3>3) Filtros e seleção de lados</h3>
+      <h3>3) Filtros e seleção</h3>
       <div class="grid cols-2">
-        <label>🔎 Filtro Esquerda
-          <input type="text" id="filterLeft" placeholder="busca em label/tags">
-        </label>
-        <label>🔎 Filtro Direita
-          <input type="text" id="filterRight" placeholder="busca em label/tags">
-        </label>
+        <label>🔎 Filtro Esquerda <input type="text" id="filterLeft" placeholder="busca em label/tags"></label>
+        <label>🔎 Filtro Direita <input type="text" id="filterRight" placeholder="busca em label/tags"></label>
       </div>
       <div class="grid cols-2" style="margin-top:8px">
-        <label>🖼️ Escolha Esquerda
-          <select id="selectLeft"></select>
-        </label>
-        <label>🖼️ Escolha Direita
-          <select id="selectRight"></select>
-        </label>
+        <label>🖼️ Esquerda (topo) <select id="selectLeft"></select></label>
+        <label>🖼️ Direita (base) <select id="selectRight"></select></label>
       </div>
       <div class="toolbar" style="margin-top:10px">
-        <button id="swapBtn" class="btn" title="Inverter lados">↔️ Inverter lados</button>
-        <button id="resetBtn" class="btn" title="Centralizar barra">🧭 Resetar barra</button>
+        <button id="swapBtn" class="btn">↔️ Inverter lados</button>
+        <button id="resetBtn" class="btn">🧭 Centralizar</button>
       </div>
     </div>
   </aside>
 
   <section class="stage-wrap">
-    <div class="stage" id="stage" aria-live="polite">
+    <div class="stage" id="stage" tabindex="0" aria-label="Comparador tipo Juxtapose (arraste a barra)">
       <!-- Base (direita) -->
       <div class="layer" id="baseLayer"><img id="imgRight" alt=""></div>
-      <!-- Topo (esquerda), recortada pela máscara -->
-      <div class="top-mask" id="topMask"><img id="imgLeft" alt=""></div>
-      <!-- Barra/handle -->
-      <div class="handle" id="handle" style="top:50%">
+      <!-- Topo (esquerda) com máscara horizontal -->
+      <div class="left-mask" id="leftMask">
+        <div class="left-mask-inner" id="leftMaskInner"><img id="imgLeft" alt=""></div>
+      </div>
+      <!-- Handle estilo Juxtapose -->
+      <div class="handle" id="handle" style="left:50%">
         <div class="knob" aria-hidden="true"></div>
       </div>
       <!-- Legendas -->
-      <div class="legend" id="legend">
+      <div class="legend">
         <span class="pill" id="leftLabel">Esquerda</span>
         <span class="pill" id="rightLabel">Direita</span>
       </div>
-      <div class="slider-ghost" id="sliderGhost">Posição: 50%</div>
+      <div class="hint">Arraste ◄ ► • Duplo-clique centraliza • Setas do teclado movem 1%</div>
     </div>
+
     <div class="card" style="margin-top:12px">
       <h3>Dicas rápidas</h3>
-      <ul style="margin:6px 0 0 18px; color:#93a3b8">
-        <li>Arraste a barra para comparar verticalmente.</li>
-        <li>Use os filtros para reduzir a lista (procura por label e tags).</li>
-        <li>Clique na miniatura para editar label/tags rapidamente.</li>
+      <ul style="margin:6px 0 0 18px;color:#9fb0c8">
+        <li>Barra vertical “estilo Juxtapose” (move no eixo X).</li>
+        <li>Use filtros para reduzir as listas (busca em label/tags).</li>
+        <li>Duplo-clique na imagem ou no knob centraliza a barra.</li>
+        <li>Teclas ◄ ► movem a barra em passos de 1% (Shift = 5%).</li>
       </ul>
     </div>
   </section>
@@ -187,14 +153,13 @@
   /*** Estado ***/
   const state = {
     images: [], // {id, url, label, tags:[]}
-    leftId: null,
-    rightId: null,
-    pos: 0.5 // 0..1 (0 = todo topo escondido; 1 = topo cobrindo tudo)
+    leftId: null,   // camada superior (recortada)
+    rightId: null,  // camada base
+    pos: 0.5        // 0..1 (0 = barra na extrema esquerda; 1 = extrema direita)
   };
 
   /*** Util ***/
-  const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const $ = s => document.querySelector(s);
   const uid = () => Math.random().toString(36).slice(2,9);
 
   function renderThumbs(){
@@ -212,14 +177,10 @@
         </div>
       `;
       el.querySelector('.edit').addEventListener('click', ()=>{
-        $('#metaSelect').value = img.id;
-        populateMetaFields(img.id);
-        $('#metaLabel').focus();
+        $('#metaSelect').value = img.id; populateMetaFields(img.id); $('#metaLabel').focus();
       });
-      // clique na thumb também seleciona no meta
       el.addEventListener('click', ()=>{
-        $('#metaSelect').value = img.id;
-        populateMetaFields(img.id);
+        $('#metaSelect').value = img.id; populateMetaFields(img.id);
       });
       cont.appendChild(el);
     });
@@ -233,10 +194,8 @@
     sel.innerHTML = state.images.map(i=>`<option value="${i.id}">${i.label||'(sem label)'} — ${i.tags.join(', ')}</option>`).join('');
     if(state.images.length && !state.images.find(i=>i.id===cur)){
       sel.value = state.images[0].id;
-    } else {
-      sel.value = cur;
-    }
-    if(sel.value){ populateMetaFields(sel.value); }
+    } else sel.value = cur;
+    if(sel.value) populateMetaFields(sel.value);
   }
 
   function populateMetaFields(id){
@@ -252,19 +211,15 @@
     if(!img) return;
     img.label = $('#metaLabel').value.trim();
     img.tags = $('#metaTags').value.split(',').map(t=>t.trim()).filter(Boolean);
-    renderThumbs();
-    // atualizar seletores mantendo escolhas
-    renderSelectors();
-    updateLegend();
+    renderThumbs(); renderSelectors(); updateLegend();
   }
 
-  function filterItems(query){
-    const q = query.trim().toLowerCase();
+  function filterItems(q){
+    q = (q||'').trim().toLowerCase();
     if(!q) return state.images;
-    return state.images.filter(i=>{
-      if((i.label||'').toLowerCase().includes(q)) return true;
-      return i.tags.some(t=>t.toLowerCase().includes(q));
-    });
+    return state.images.filter(i =>
+      (i.label||'').toLowerCase().includes(q) || i.tags.some(t=>t.toLowerCase().includes(q))
+    );
   }
 
   function renderSelectors(){
@@ -273,24 +228,12 @@
     const L = $('#selectLeft'), R = $('#selectRight');
     const leftList = filterItems(leftQ);
     const rightList = filterItems(rightQ);
-    const opt = arr => arr.map(i=>`<option value="${i.id}">${i.label||'(sem label)'} — ${i.tags.join(', ')}</option>`).join('');
-    const leftPrev = L.value, rightPrev = R.value;
-    L.innerHTML = opt(leftList);
-    R.innerHTML = opt(rightList);
-
-    // garantir valores
-    if(leftList.length){
-      L.value = leftList.find(i=>i.id===leftPrev)?.id || leftList[0].id;
-      state.leftId = L.value;
-    } else {
-      L.innerHTML = '<option>(sem resultados)</option>'; state.leftId=null;
-    }
-    if(rightList.length){
-      R.value = rightList.find(i=>i.id===rightPrev)?.id || rightList[0].id;
-      state.rightId = R.value;
-    } else {
-      R.innerHTML = '<option>(sem resultados)</option>'; state.rightId=null;
-    }
+    const toOpt = arr => arr.map(i=>`<option value="${i.id}">${i.label||'(sem label)'} — ${i.tags.join(', ')}</option>`).join('');
+    const lp = L.value, rp = R.value;
+    L.innerHTML = toOpt(leftList);
+    R.innerHTML = toOpt(rightList);
+    if(leftList.length){ L.value = leftList.find(i=>i.id===lp)?.id || leftList[0].id; state.leftId = L.value; } else { L.innerHTML = '<option>(sem resultados)</option>'; state.leftId=null; }
+    if(rightList.length){ R.value = rightList.find(i=>i.id===rp)?.id || rightList[0].id; state.rightId = R.value; } else { R.innerHTML = '<option>(sem resultados)</option>'; state.rightId=null; }
     updateStage();
   }
 
@@ -309,34 +252,36 @@
     updateLegend();
   }
 
-  function setPositionFromY(clientY){
-    const rect = $('#stage').getBoundingClientRect();
-    let y = clientY - rect.top;
-    y = Math.max(0, Math.min(rect.height, y));
-    const pos = y / rect.height;
-    setPosition(pos);
-  }
-
-  function setPosition(p){
-    state.pos = Math.max(0.02, Math.min(0.98, p)); // evita sumir totalmente
+  /*** Juxtapose-like slider (horizontal corte) ***/
+  function setPosition(p, animate=false){
+    state.pos = Math.max(0.02, Math.min(0.98, p));
     const stage = $('#stage');
-    const h = stage.clientHeight;
-    const px = Math.round(h * state.pos);
-    // mascara cobre do bottom até a barra => altura = px
-    const mask = $('#topMask');
-    mask.style.height = px + 'px';
-    mask.style.top = (h - px) + 'px';
-    // handle
+    const w = stage.clientWidth;
+    const x = Math.round(w * state.pos);
+
+    const mask = $('#leftMask');
+    const inner = $('#leftMaskInner');
+    // A máscara mostra apenas a partir da esquerda até X
+    mask.style.clipPath = `inset(0 ${Math.max(0,w-x)}px 0 0)`;
+    // O handle vai em X
     const handle = $('#handle');
-    handle.style.top = (h - px) + 'px';
-    $('#sliderGhost').textContent = `Posição: ${Math.round(state.pos*100)}%`;
+    if(animate){
+      handle.style.transition = 'left .18s ease, transform .18s ease';
+      mask.style.transition = 'clip-path .18s ease';
+      setTimeout(()=>{handle.style.transition = ''; mask.style.transition='';}, 200);
+    }
+    handle.style.left = x + 'px';
   }
 
-  /*** Eventos de UI ***/
-  // Upload
-  const drop = $('#drop');
-  const fileInput = $('#fileInput');
+  function setPositionFromClientX(clientX){
+    const rect = $('#stage').getBoundingClientRect();
+    let x = clientX - rect.left;
+    x = Math.max(0, Math.min(rect.width, x));
+    setPosition(x / rect.width);
+  }
 
+  // Upload
+  const drop = $('#drop'), fileInput = $('#fileInput');
   function addFiles(files){
     if(!files?.length) return;
     const arr = Array.from(files);
@@ -345,82 +290,73 @@
       if(!file.type.startsWith('image/')){ pending--; return; }
       const reader = new FileReader();
       reader.onload = e=>{
-        state.images.push({
-          id: uid(),
-          url: e.target.result,
-          label: file.name.replace(/\.[^/.]+$/,''),
-          tags: []
-        });
+        state.images.push({ id: uid(), url: e.target.result, label: file.name.replace(/\.[^/.]+$/,''), tags: [] });
         pending--;
         if(pending===0){
           renderThumbs();
-          // primeira vez: setar lados
           if(state.images.length>=2 && (!state.leftId || !state.rightId)){
-            state.leftId = state.images[0].id;
-            state.rightId = state.images[1].id;
-            renderSelectors();
-            setPosition(0.5);
+            state.leftId = state.images[0].id; state.rightId = state.images[1].id;
+            renderSelectors(); setPosition(0.5, true);
           }
         }
       };
       reader.readAsDataURL(file);
     });
   }
-
   drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('dragover'); });
   drop.addEventListener('dragleave', ()=> drop.classList.remove('dragover'));
-  drop.addEventListener('drop', e=>{
-    e.preventDefault(); drop.classList.remove('dragover');
-    addFiles(e.dataTransfer.files);
-  });
-  drop.addEventListener('click', ()=>{
-    fileInput.click();
-  });
+  drop.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+  drop.addEventListener('click', ()=> fileInput.click());
   fileInput.addEventListener('change', e=> addFiles(e.target.files));
 
-  // Meta
+  // Metadados
   $('#saveMeta').addEventListener('click', saveMeta);
   $('#metaSelect').addEventListener('change', e=> populateMetaFields(e.target.value));
-
-  // Filtros e seletores
   $('#filterLeft').addEventListener('input', renderSelectors);
   $('#filterRight').addEventListener('input', renderSelectors);
   $('#selectLeft').addEventListener('change', e=>{ state.leftId=e.target.value; updateStage(); });
   $('#selectRight').addEventListener('change', e=>{ state.rightId=e.target.value; updateStage(); });
-
-  // Inverter lados
   $('#swapBtn').addEventListener('click', ()=>{
-    const tmp = state.leftId; state.leftId = state.rightId; state.rightId = tmp;
-    $('#selectLeft').value = state.leftId || '';
-    $('#selectRight').value = state.rightId || '';
+    const t = state.leftId; state.leftId = state.rightId; state.rightId = t;
+    $('#selectLeft').value = state.leftId || ''; $('#selectRight').value = state.rightId || '';
     updateStage();
   });
+  $('#resetBtn').addEventListener('click', ()=> setPosition(0.5, true));
 
-  // Reset barra
-  $('#resetBtn').addEventListener('click', ()=> setPosition(0.5));
-
-  // Drag da barra
-  const handle = $('#handle');
+  // Drag/Touch no estilo Juxtapose
+  const stage = $('#stage'); const handle = $('#handle');
   let dragging = false;
-
   function startDrag(e){
-    dragging = true;
-    document.body.style.userSelect = 'none';
-    (e.type==='mousedown') ? setPositionFromY(e.clientY) : setPositionFromY(e.touches[0].clientY);
+    dragging = true; document.body.style.userSelect = 'none';
+    setPositionFromClientX(e.type==='mousedown' ? e.clientX : e.touches[0].clientX);
   }
   function moveDrag(e){
     if(!dragging) return;
-    setPositionFromY(e.type.includes('mouse') ? e.clientY : e.touches[0].clientY);
+    setPositionFromClientX(e.type.includes('mouse') ? e.clientX : e.touches[0].clientX);
   }
-  function endDrag(){
-    dragging = false; document.body.style.userSelect = '';
-  }
+  function endDrag(){ dragging = false; document.body.style.userSelect = ''; }
   handle.addEventListener('mousedown', startDrag);
   handle.addEventListener('touchstart', startDrag, {passive:true});
   window.addEventListener('mousemove', moveDrag);
   window.addEventListener('touchmove', moveDrag, {passive:true});
   window.addEventListener('mouseup', endDrag);
   window.addEventListener('touchend', endDrag);
+  // Clique/duplo-clique na área também reposiciona
+  stage.addEventListener('mousedown', e=>{
+    if(e.target===handle || e.target.closest('.knob')) return; // já tratado
+    setPositionFromClientX(e.clientX);
+  });
+  stage.addEventListener('dblclick', ()=> setPosition(0.5, true));
+
+  // Teclado: setas ajustam 1% (Shift = 5%)
+  stage.addEventListener('keydown', e=>{
+    const step = e.shiftKey ? 0.05 : 0.01;
+    if(e.key==='ArrowLeft'){ setPosition(state.pos - step, true); }
+    if(e.key==='ArrowRight'){ setPosition(state.pos + step, true); }
+  });
+
+  // Responsivo
+  new ResizeObserver(()=> setPosition(state.pos)).observe(stage);
 
   // Inicial
   setPosition(0.5);
