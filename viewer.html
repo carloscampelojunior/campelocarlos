@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apresentação – Comparador estilo Juxtapose</title>
+<style>
+  :root{--line:#1f2937;--accent:#38bdf8;--bg:#0a1020;--text:#e5e7eb}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:500 15px/1.4 system-ui,Segoe UI,Roboto}
+  .frame{position:fixed;inset:0;display:grid;place-items:center}
+  /* Agora a stage usa APENAS largura; a altura é dada pela aspect-ratio calculada em JS */
+  .stage{
+    position:relative;
+    width:min(96vw,1400px);
+    max-height:92vh;
+    aspect-ratio:16/9; /* será sobrescrito via JS com a proporção real */
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    background:#0b1120;
+    touch-action:none;
+  }
+  .layer{position:absolute;inset:0}
+  .layer img{width:100%;height:100%;object-fit:contain;background:#0b1120}
+  .mask{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .handle{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);cursor:ew-resize;transform:translateX(-1px)}
+  .knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:999px;border:2px solid var(--accent);display:grid;place-items:center;background:#06111f;box-shadow:0 3px 14px #0008, inset 0 0 0 2px #06202e}
+  .knob:after{content:"◄ ►";font-size:14px;color:var(--accent)}
+  .legend{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+  .pill{padding:4px 8px;border-radius:999px;background:#0e1a30bb;border:1px solid #22314a;font-size:12px}
+  .topbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#0e1a30bb;border:1px solid #22314a;border-radius:10px;padding:6px 10px;font-size:13px;color:#cfefff}
+  .toast{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);background:#0e1a30;border:1px solid #22314a;border-radius:10px;padding:8px 12px;max-width:min(92vw,900px)}
+  .toast code{color:#bfe6ff}
+  .btn{background:#0e1a30;border:1px solid #22314a;color:#e2e8f0;padding:6px 10px;border-radius:10px;cursor:pointer}
+  .btn:hover{border-color:#2e476f}
+</style>
+</head>
+<body>
+<div class="topbar" id="title">Comparador</div>
+
+<div class="frame">
+  <div class="stage" id="stage" tabindex="0" aria-label="Comparador (arraste a barra)">
+    <div class="layer"><img id="imgRight" alt=""></div>
+    <div class="mask" id="mask"><img id="imgLeft" alt=""></div>
+    <div class="handle" id="handle" style="left:50%"><div class="knob"></div></div>
+    <div class="legend"><span class="pill" id="leftLabel">Esquerda</span><span class="pill" id="rightLabel">Direita</span></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+(function(){
+  const q = new URLSearchParams(location.search);
+  const normalizeDropbox = (url) => {
+    if (!url) return '';
+    try {
+      const u = new URL(url);
+      if (u.searchParams.has('dl')) {
+        u.searchParams.delete('dl');
+        u.searchParams.set('raw','1');
+      } else if (!u.searchParams.has('raw')) {
+        u.searchParams.set('raw','1');
+      }
+      return u.toString();
+    } catch { return url; }
+  };
+
+  let left  = normalizeDropbox(q.get('left') || '');
+  let right = normalizeDropbox(q.get('right') || '');
+  const lLab  = q.get('l') || 'Esquerda';
+  const rLab  = q.get('r') || 'Direita';
+  const posQS = Math.max(0, Math.min(100, Number(q.get('pos')||50))) / 100;
+
+  const imgL = document.getElementById('imgLeft');
+  const imgR = document.getElementById('imgRight');
+  const mask = document.getElementById('mask');
+  const handle = document.getElementById('handle');
+  const stage = document.getElementById('stage');
+  const toast = document.getElementById('toast');
+
+  const showToast = (html) => { toast.innerHTML = html; toast.style.display = 'block'; };
+  const hideToast = () => { toast.style.display = 'none'; };
+
+  document.getElementById('leftLabel').textContent  = lLab;
+  document.getElementById('rightLabel').textContent = rLab;
+  document.getElementById('title').textContent = `${lLab} × ${rLab}`;
+
+  let errors = [];
+  imgL.onerror = () => { errors.push('Erro ao carregar imagem ESQUERDA.'); showToast(errors.join('<br>')); };
+  imgR.onerror = () => { errors.push('Erro ao carregar imagem DIREITA.'); showToast(errors.join('<br>')); };
+
+  // ajusta a proporção da moldura com base nas imagens carregadas
+  function updateAspectRatio(){
+    if (!imgL.naturalWidth && !imgR.naturalWidth) return;
+    const w = Math.max(imgL.naturalWidth || 0, imgR.naturalWidth || 0);
+    const h = Math.max(imgL.naturalHeight|| 0, imgR.naturalHeight|| 0);
+    if (w > 0 && h > 0) {
+      // define aspect-ratio real
+      stage.style.aspectRatio = `${w} / ${h}`;
+      // Se a altura extrapolar 92vh, deixamos o navegador reduzir a largura automaticamente
+      // (width já está limitada a 96vw; max-height:92vh impede estouro vertical)
+    }
+  }
+
+  imgL.onload = ()=>{ hideToast(); updateAspectRatio(); };
+  imgR.onload = ()=>{ hideToast(); updateAspectRatio(); };
+
+  imgL.src = left;
+  imgR.src = right;
+
+  // Slider
+  let pos = posQS || 0.5;
+  function setPos(p, anim=false){
+    pos = Math.max(0.02, Math.min(0.98, p));
+    const w = stage.clientWidth, x = Math.round(w*pos);
+    mask.style.clipPath = `inset(0 ${Math.max(0,w-x)}px 0 0)`;
+    handle.style.left = x+'px';
+    if(anim){
+      handle.style.transition='left .18s ease';
+      mask.style.transition='clip-path .18s ease';
+      setTimeout(()=>{handle.style.transition='';mask.style.transition='';},200);
+    }
+  }
+  setPos(pos,true);
+
+  new ResizeObserver(()=> setPos(pos)).observe(stage);
+
+  // Interação
+  let dragging=false;
+  function fromX(cx){const r=stage.getBoundingClientRect(); setPos((cx-r.left)/r.width);}
+  handle.addEventListener('mousedown',()=>{dragging=true; document.body.style.userSelect='none';});
+  window.addEventListener('mouseup',()=>{dragging=false; document.body.style.userSelect='';});
+  window.addEventListener('mousemove',e=>{if(dragging)fromX(e.clientX)});
+  handle.addEventListener('touchstart',e=>{dragging=true; fromX(e.touches[0].clientX)},{passive:true});
+  window.addEventListener('touchmove',e=>{if(dragging)fromX(e.touches[0].clientX)},{passive:true});
+  window.addEventListener('touchend',()=>{dragging=false; document.body.style.userSelect='';});
+  stage.addEventListener('dblclick',()=> setPos(0.5,true));
+  stage.addEventListener('keydown',e=>{
+    const step=e.shiftKey?0.05:0.01;
+    if(e.key==='ArrowLeft') setPos(pos-step,true);
+    if(e.key==='ArrowRight') setPos(pos+step,true);
+  });
+
+  // Mensagem quando faltar parâmetro
+  if (!left || !right) {
+    showToast(
+      'Parâmetros ausentes. Use: <code>?left=URL&right=URL&l=Antes&r=Depois&pos=50</code>'
+    );
+  }
+})();
+</script>
+</body>
+</html>
