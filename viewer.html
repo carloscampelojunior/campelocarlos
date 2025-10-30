@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apresentação – Comparador estilo Juxtapose</title>
+<style>
+  :root{--line:#1f2937;--accent:#38bdf8;--bg:#0a1020;--text:#e5e7eb}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:500 15px/1.4 system-ui,Segoe UI,Roboto}
+  .frame{position:fixed;inset:0;display:grid;place-items:center}
+  .stage{
+    position:relative;
+    /* largura/altura serão definidas via JS para evitar distorção */
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    background:#0b1120;
+    touch-action:none;
+  }
+  .layer{position:absolute;inset:0}
+  .layer img{width:100%;height:100%;object-fit:contain;background:#0b1120}
+  .mask{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .handle{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);cursor:ew-resize;transform:translateX(-1px)}
+  .knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:999px;border:2px solid var(--accent);display:grid;place-items:center;background:#06111f;box-shadow:0 3px 14px #0008, inset 0 0 0 2px #06202e}
+  .knob:after{content:"◄ ►";font-size:14px;color:var(--accent)}
+  .legend{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+  .pill{padding:4px 8px;border-radius:999px;background:#0e1a30bb;border:1px solid #22314a;font-size:12px}
+  .topbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#0e1a30bb;border:1px solid #22314a;border-radius:10px;padding:6px 10px;font-size:13px;color:#cfefff}
+  .toast{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);background:#0e1a30;border:1px solid #22314a;border-radius:10px;padding:8px 12px;max-width:min(92vw,900px)}
+  .toast code{color:#bfe6ff}
+</style>
+</head>
+<body>
+<div class="topbar" id="title">Comparador</div>
+
+<div class="frame">
+  <div class="stage" id="stage" tabindex="0" aria-label="Comparador (arraste a barra)">
+    <div class="layer"><img id="imgRight" alt=""></div>
+    <div class="mask" id="mask"><img id="imgLeft" alt=""></div>
+    <div class="handle" id="handle" style="left:50%"><div class="knob"></div></div>
+    <div class="legend"><span class="pill" id="leftLabel">Esquerda</span><span class="pill" id="rightLabel">Direita</span></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+(function(){
+  const q = new URLSearchParams(location.search);
+
+  // normaliza dropbox ?dl=0 -> ?raw=1
+  const norm = (url)=>{
+    if(!url) return '';
+    try{
+      const u = new URL(url);
+      if(u.searchParams.has('dl')){ u.searchParams.delete('dl'); u.searchParams.set('raw','1'); }
+      else if(!u.searchParams.has('raw')) u.searchParams.set('raw','1');
+      return u.toString();
+    }catch{ return url; }
+  };
+
+  let left  = norm(q.get('left')  || '');
+  let right = norm(q.get('right') || '');
+  const lLab = q.get('l') || 'Esquerda';
+  const rLab = q.get('r') || 'Direita';
+  const posQS = Math.max(0, Math.min(100, Number(q.get('pos')||50))) / 100;
+  const fitMode = (q.get('fit')||'auto').toLowerCase(); // auto | width | height
+
+  const stage  = document.getElementById('stage');
+  const imgL   = document.getElementById('imgLeft');
+  const imgR   = document.getElementById('imgRight');
+  const mask   = document.getElementById('mask');
+  const handle = document.getElementById('handle');
+  const toast  = document.getElementById('toast');
+
+  document.getElementById('leftLabel').textContent  = lLab;
+  document.getElementById('rightLabel').textContent = rLab;
+  document.getElementById('title').textContent = `${lLab} × ${rLab}`;
+
+  const showToast=(html)=>{ toast.innerHTML = html; toast.style.display='block'; };
+  const hideToast=()=>{ toast.style.display='none'; };
+
+  if(!left || !right){
+    showToast('Parâmetros ausentes. Use: <code>?left=URL&right=URL&l=Antes&r=Depois&pos=50</code>');
+  }
+
+  let wL=0,hL=0,wR=0,hR=0;
+  imgL.onload = ()=>{ wL=imgL.naturalWidth; hL=imgL.naturalHeight; layout(); hideToast(); };
+  imgR.onload = ()=>{ wR=imgR.naturalWidth; hR=imgR.naturalHeight; layout(); hideToast(); };
+  imgL.onerror= ()=> showToast('Erro ao carregar a imagem ESQUERDA.');
+  imgR.onerror= ()=> showToast('Erro ao carregar a imagem DIREITA.');
+
+  imgL.src = left;
+  imgR.src = right;
+
+  // calcula e aplica o melhor tamanho, respeitando 96vw x 92vh
+  function layout(){
+    const vw = Math.min(window.innerWidth*0.96, 1400); // limite máximo de largura
+    const vh = window.innerHeight*0.92;
+
+    // proporção de cada imagem (se alguma não tiver carregado ainda, ignora)
+    const rL = (wL>0 && hL>0) ? (wL/hL) : null;
+    const rR = (wR>0 && hR>0) ? (wR/hR) : null;
+
+    // escolha da proporção alvo:
+    let r; // largura/altura
+    if(rL && rR){
+      // escolha a MAIS LARGA para evitar barras horizontais no mosaico
+      r = Math.max(rL, rR);
+    }else{
+      r = rL || rR || (16/9);
+    }
+
+    // área disponível
+    const canW = vw;
+    const canH = vh;
+
+    // decide ajuste por largura/altura
+    let W, H;
+    if(fitMode==='width'){
+      W = canW; H = W / r;
+      if(H>canH){ H=canH; W=H*r; }
+    } else if(fitMode==='height'){
+      H = canH; W = H * r;
+      if(W>canW){ W=canW; H=W/r; }
+    } else {
+      // auto: testa os dois e escolhe o que ocupa mais área sem exceder
+      const wByWidth  = canW;
+      const hByWidth  = wByWidth / r;
+      const hByHeight = canH;
+      const wByHeight = hByHeight * r;
+
+      const areaWidth  = (hByWidth<=canH)  ? wByWidth*hByWidth   : -1;
+      const areaHeight = (wByHeight<=canW) ? wByHeight*hByHeight : -1;
+
+      if(areaWidth >= areaHeight){
+        W = Math.min(wByWidth, canW);
+        H = W / r;
+      }else{
+        H = Math.min(hByHeight, canH);
+        W = H * r;
+      }
+    }
+
+    stage.style.width  = Math.round(W) + 'px';
+    stage.style.height = Math.round(H) + 'px';
+
+    // reposiciona a barra conforme nova largura
+    setPos(pos);
+  }
+
+  // slider
+  let pos = posQS || 0.5;
+  function setPos(p, anim=false){
+    pos = Math.max(0.02, Math.min(0.98, p));
+    const w = stage.clientWidth;
+    const x = Math.round(w*pos);
+    mask.style.clipPath = `inset(0 ${Math.max(0,w-x)}px 0 0)`;
+    handle.style.left = x+'px';
+    if(anim){
+      handle.style.transition='left .18s ease';
+      mask.style.transition='clip-path .18s ease';
+      setTimeout(()=>{handle.style.transition='';mask.style.transition='';},200);
+    }
+  }
+  setPos(pos,true);
+
+  // interação
+  let dragging=false;
+  function fromX(cx){ const r = stage.getBoundingClientRect(); setPos((cx-r.left)/r.width); }
+  handle.addEventListener('mousedown',()=>{dragging=true; document.body.style.userSelect='none';});
+  window.addEventListener('mouseup',()=>{dragging=false; document.body.style.userSelect='';});
+  window.addEventListener('mousemove',e=>{ if(dragging) fromX(e.clientX); });
+  handle.addEventListener('touchstart',e=>{dragging=true; fromX(e.touches[0].clientX);},{passive:true});
+  window.addEventListener('touchmove',e=>{ if(dragging) fromX(e.touches[0].clientX); },{passive:true});
+  window.addEventListener('touchend',()=>{dragging=false; document.body.style.userSelect='';});
+  stage.addEventListener('dblclick',()=> setPos(0.5,true));
+  stage.addEventListener('keydown',e=>{
+    const step = e.shiftKey?0.05:0.01;
+    if(e.key==='ArrowLeft')  setPos(pos-step,true);
+    if(e.key==='ArrowRight') setPos(pos+step,true);
+  });
+
+  // relayout quando a janela muda
+  window.addEventListener('resize', layout);
+})();
+</script>
+</body>
+</html>
