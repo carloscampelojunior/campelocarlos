@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apresentação – Comparador estilo Juxtapose</title>
+
+<style>
+  :root{--line:#1f2937;--accent:#38bdf8;--bg:#0a1020;--text:#e5e7eb}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 15px/1.4 system-ui,Segoe UI,Roboto}
+  .frame{position:fixed;inset:0;display:grid;place-items:center}
+  .stage{position:relative;width:min(1200px,96vw);height:min(70vw,86vh);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0b1120;touch-action:none}
+  .layer{position:absolute;inset:0}
+  .layer img{width:100%;height:100%;object-fit:contain;background:#0b1120}
+  .mask{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .handle{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);cursor:ew-resize;transform:translateX(-1px)}
+  .knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:999px;border:2px solid var(--accent);display:grid;place-items:center;background:#06111f;box-shadow:0 3px 14px #0008, inset 0 0 0 2px #06202e}
+  .knob:after{content:"◄ ►";font-size:14px;color:var(--accent)}
+  .legend{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+  .pill{padding:4px 8px;border-radius:999px;background:#0e1a30bb;border:1px solid #22314a;font-size:12px}
+  .topb
